@@ -41,9 +41,10 @@ const ItemCard = ({ item, onLike, accentColor, isLiked }) => {
             {/* Timestamp */}
             <div className="mt-3 pl-3">
                 <span className="text-[10px] text-slate-400 font-mono tracking-wide">
-                    {new Date(item.created_at).toLocaleTimeString([], {
+                    {new Date(item.created_at).toLocaleTimeString('th-TH', {
                         hour: '2-digit',
-                        minute: '2-digit'
+                        minute: '2-digit',
+                        timeZone: 'Asia/Bangkok'
                     })}
                 </span>
             </div>
