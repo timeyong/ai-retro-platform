@@ -56,6 +56,28 @@ const db = new sqlite3.Database('./retro.db', (err) => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(item_id, user_id)
     )`);
+
+    // Create table to persist AI-generated content
+    db.run(`CREATE TABLE IF NOT EXISTS ai_data (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      summary TEXT,
+      sentiment TEXT,
+      vibe_image TEXT,
+      last_updated DATETIME
+    )`);
+
+    // Load existing AI data on startup
+    db.get(`SELECT * FROM ai_data WHERE id = 1`, (err, row) => {
+      if (!err && row) {
+        aiData = {
+          summary: row.summary,
+          sentiment: row.sentiment ? JSON.parse(row.sentiment) : null,
+          vibeImage: row.vibe_image,
+          lastUpdated: row.last_updated
+        };
+        console.log('[DB] Loaded persisted AI data from database.');
+      }
+    });
   }
 });
 
@@ -90,6 +112,19 @@ async function runAIGeneration() {
       vibeImage,
       lastUpdated: new Date().toISOString()
     };
+
+    // Persist to database
+    db.run(
+      `INSERT OR REPLACE INTO ai_data (id, summary, sentiment, vibe_image, last_updated) VALUES (1, ?, ?, ?, ?)`,
+      [aiData.summary, JSON.stringify(aiData.sentiment), aiData.vibeImage, aiData.lastUpdated],
+      (err) => {
+        if (err) {
+          console.error('[AI Cron] Error saving AI data to database:', err);
+        } else {
+          console.log('[AI Cron] AI data persisted to database.');
+        }
+      }
+    );
 
     // Broadcast to all connected clients
     io.emit('ai-update', aiData);
