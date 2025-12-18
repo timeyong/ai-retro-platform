@@ -1,10 +1,62 @@
-import React, { useState } from 'react';
-import { Plus, TrendingUp, AlertTriangle, MessageCircle, Maximize2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, TrendingUp, AlertTriangle, MessageCircle, Maximize2, X, Sparkles, ChevronRight } from 'lucide-react';
 import ItemCard from './ItemCard';
+
+// First-time tooltip component
+const FirstTimeTooltip = ({ onDismiss }) => {
+    return (
+        <div className="first-time-tooltip animate-fade-in">
+            <div className="tooltip-arrow"></div>
+            <div className="tooltip-content">
+                <div className="flex items-center gap-2 mb-2">
+                    <Sparkles size={16} className="text-amber-500" />
+                    <span className="font-semibold text-slate-800">ยินดีต้อนรับ! 👋</span>
+                </div>
+                <p className="text-sm text-slate-600 mb-3">
+                    พิมพ์ความคิดเห็นของคุณในช่องด้านล่าง แล้วกด Enter เพื่อส่ง
+                </p>
+                <ul className="text-xs text-slate-500 space-y-1 mb-3">
+                    <li className="flex items-center gap-1.5">
+                        <ChevronRight size={12} />
+                        <span>สามารถส่งได้หลายครั้ง</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                        <ChevronRight size={12} />
+                        <span>กดหัวใจเพื่อ Like ความคิดเห็นที่ชอบ</span>
+                    </li>
+                </ul>
+                <button
+                    onClick={onDismiss}
+                    className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
+                >
+                    เข้าใจแล้ว!
+                </button>
+            </div>
+        </div>
+    );
+};
 
 const Column = ({ title, type, items, onAdd, onLike, likedItems }) => {
     const [inputValue, setInputValue] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
+    const [showFirstTimeTooltip, setShowFirstTimeTooltip] = useState(false);
+
+    // Check if first-time user
+    useEffect(() => {
+        const hasSeenTooltip = localStorage.getItem('retro_seen_tooltip');
+        if (!hasSeenTooltip) {
+            // Show tooltip after a brief delay for better UX
+            const timer = setTimeout(() => {
+                setShowFirstTimeTooltip(true);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    const dismissTooltip = () => {
+        setShowFirstTimeTooltip(false);
+        localStorage.setItem('retro_seen_tooltip', 'true');
+    };
 
     // Sort items by likes (descending)
     const sortedItems = [...items].sort((a, b) => (b.likes || 0) - (a.likes || 0));
@@ -107,7 +159,11 @@ const Column = ({ title, type, items, onAdd, onLike, likedItems }) => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-black/5 bg-white/30">
+            <div className="p-4 border-t border-black/5 bg-white/30 relative">
+                {/* First-time tooltip - only show on the first column (good) */}
+                {!isModal && type === 'good' && showFirstTimeTooltip && (
+                    <FirstTimeTooltip onDismiss={dismissTooltip} />
+                )}
                 <form onSubmit={handleSubmit} className="relative">
                     <input
                         type="text"
@@ -127,11 +183,6 @@ const Column = ({ title, type, items, onAdd, onLike, likedItems }) => {
                         <Plus size={16} />
                     </button>
                 </form>
-                {/* Tooltip hint */}
-                <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-slate-400 animate-pulse">
-                    <span>💡</span>
-                    <span>สามารถส่งได้หลายครั้ง</span>
-                </div>
             </div>
         </>
     );
